@@ -313,7 +313,7 @@ Where $`l_{alignment}`$ is the alignment length, $`d_{edit}`$ is the edit distan
 
 Based on test data, the following rewards and penalties can be estimated and the following equation.
 
-| Type | weigth |
+| Type | weight |
 | --- | --- |
 | identical | 1 |
 | mismatch | -2 |
