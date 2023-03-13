@@ -20,7 +20,7 @@ The "middle part" of workflows consists of filtering steps to process your raw
 output from the primary analysis (mapping, alignment or other homology tools).
 Since [samtools](http://samtools.github.io/) already provides many useful tools
 for this. The goal for this project was to add tools for common filtering
-steps that are not coverd by samtools (but maybe included in CLC genomic workbench).
+steps that are not covered by samtools (but maybe included in CLC genomic workbench).
 
 These different filtering options are covered by two scripts (sam-filter.pl & sam-keep-best.pl).
 The first (sam-filter.pl) filter is based on thresholds:
@@ -33,15 +33,15 @@ Longer sequence can produce several hits to the same reference sequence due to
 non-homologous sequences, this step makes sure that this does not interfere with the results.
 
 The additional tools are designed:
-- to generate simple reporting formarts (TSV),
-- to visualize results on the command line for explorative purpuses,
+- to generate simple reporting formats (TSV),
+- to visualize results on the command line for explorative purposes,
 - to convert into formats that can be used by existing 3rd party tools.
 
 1. Getting alignment, hit or homology data to SAM
-    - `blast-sam.pl`: BLAST wrapper. (Although BLAST has the option to save to SAM, it does not produce a valid SAM output.)
+    - `blast-sam.pl`: BLAST wrapper. Although BLAST has the option to save to SAM, it does not produce a valid SAM output, hence this wrapper.
     - `asn2sam.pl`: BLAST ASN.1 (archive) converter
     - `exonerate-sam.pl`: exonerate wrapper
-    - `delta2sam.pl`: delta (nucmer) coverter
+    - `delta2sam.pl`: delta (nucmer) converter
 2. filtering SAM
     - `sam-filter.pl`: filters SAM entries (hits) based on criteria specified by the user. Hits that are kept need to meet all the criteria specified. Options:
         + Minimum length of the query(/read/subject)  `-minlen=(\d+)`
@@ -57,15 +57,15 @@ The additional tools are designed:
     - `sam-update-cigar.pl`: Changes the CIGAR encoding to the classical one (both match and mismatch as `M`)
     - `sam-update-iupac.pl`: Corrects CIGAR and `NM:i` scores for IUPAC sites in the reference sequence (useful when looking for primer and probe sites)
 4. reporting: aggregation of info from SAM files
-    - `sam-similarity.pl`: calculate ANI and coverage for the ref and query files. Ideal for comapring two (bacterial) genomes.
-    - `sam-report.pl`: aggraget statistics for sequence pairs
+    - `sam-similarity.pl`: calculate ANI and coverage for the reference and query files. Ideal for comparing two (bacterial) genomes.
+    - `sam-report.pl`: aggregate statistics for sequence pairs
     - `sam-per-ref.pl`: aggregate statistics for each reference sequence (similar to `sam-report.pl`, but query sequences are pooled per reference sequence and only the number of sequences is shown instead of seqID)
     - `sam-hit-info.pl`: print TSV format hit info that can be used for visualizing reference coverage by the hits
 5. downstream processes for SAM
     - `sam-extract-hit-seq.pl`: Extract the sequence of the query covered by the hit and print it in FASTA format with some info on the alignment.
 6. explore SAM data: intended for exploratory analysis and not for reporting or as an automated workflow step
-    - `sam-ref-plot.pl`: For each hit give a rough ASCII graphic coverage of the reference by the query. Also show IDs, percent covered and total lengths of ref and query, and similarty in decimal format. 
-    - `sam-display-alignment.pl`: For each hit give a exonerate like alignment view output plus rough ASCII graphic coverage of both ref and query by the hit.
+    - `sam-ref-plot.pl`: For each hit give a rough ASCII graphic coverage of the reference by the query. Also show IDs, percent covered and total lengths of reference and query, and similarity in decimal format. 
+    - `sam-display-alignment.pl`: For each hit give a exonerate like alignment view output plus rough ASCII graphic coverage of both reference and query by the hit.
         + FASTA file containing reference sequences has to be specified as the second argument.
 7. other
     - `sam2delta.pl`: SAM to delta. Any SAM file can be converted for visualizing using mummerplot.
@@ -178,7 +178,7 @@ flowchart LR
 Metadata aspects (to do):
 - Comment lines could be used to store input file information
 - Reference sequence can hold assembly ID information
-- We could add Line to the header for storing provenence info of the runs
+- We could add Line to the header for storing provenance info of the runs
 
 ## SAM format
 
@@ -261,9 +261,9 @@ Plus non-standard tags:
 - `PI:f:96.55` - float percent identify, here 96.55
 - `BS:f:701.049` - float bit-score, here 701.049 (`bitscore`)
 
-`blast-sam.pl` is wrapper to produce SAM format blast hits
+`blast-sam.pl` is a wrapper to produce SAM format blast hits
 
-`asn2sam.pl` is wrapper `blast_fromatter` to produce a SAM format. By using the ASN format, it is possible to run BLAST once and generate multiple formats from the results.
+`asn2sam.pl` is wrapper for `blast_formatter` to produce a SAM format. By using the ASN format, it is possible to run BLAST once and generate multiple formats from the results.
 
 ```
 makeblastdb -taxid_map test_map.txt  -in set1.fas -dbtype nucl -parse_seqids
@@ -281,10 +281,10 @@ subject database "dir1/ref.fas",
 ```
 
 In this case it is in `dir1` folder and the original input fasta is called `ref.fas`.
-So when ASN.1 is reads by `blast_formatter` it will look for the indecies in `dir1` folder relative to where `blast_formatter` is invoced, not relative to the ASN.1 file.
+So when ASN.1 is read by `blast_formatter` it will look for the indices in `dir1` folder relative to where `blast_formatter` is called, not relative to the ASN.1 file.
 The actual `ref.fas` files is not needed only the index files generated by `makeblastdb`.
 
-It specificly relies on finding `$subject-db\.ndb` and `$subject-db\.nin`. The rest of the files don't seem to be needed for this step. (Probably needed to run a BLAST on the db.)
+It specifically relies on finding `$subject-db\.ndb` and `$subject-db\.nin`. The rest of the files don't seem to be needed for this step. (Probably needed to run a BLAST on the db.)
 
 ## Alignment score
 
