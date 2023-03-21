@@ -85,7 +85,7 @@ while(<>) {
 	print "$_\n";
 	next;
     }
-    if ($hit{'RNAME'} eq "*") {
+    if ($hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*") {
 	print biointsam::sam_string(\%hit), "\n" if $unmapped;
 	next;
     }

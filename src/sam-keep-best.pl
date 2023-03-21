@@ -160,7 +160,7 @@ while(<>) {
 	print "$_\n";
 	next;
     }
-    next if $hit{'RNAME'} eq "*";
+    next if $hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*";
     # Get alginment data
     my $aln = biointsam::parse_cigar($hit{'CIGAR'}, $hit{'FLAG'}, $hit{'SEQ'});
     # Store the length of queey seq

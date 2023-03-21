@@ -98,7 +98,7 @@ while(<$samfh>) {
 	next;
     }
     # Nothing to do if there is no hit for the query sequence, so skip it
-    next if $hit{'RNAME'} eq "*";
+    next if $hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*";
 
     $hit{'SEQ'} = uc($hit{'SEQ'});
     

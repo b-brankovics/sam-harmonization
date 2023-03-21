@@ -58,7 +58,7 @@ while(<>) {
     my %hit;
     biointsam::parse_sam($_, \%ref, \%hit); 
     next unless %hit;
-    next if $hit{'RNAME'} eq "*";
+    next if $hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*";
     biointsam::score(\%hit);
     if ($add{'RI:f'} || $add{'QI:f'} || $add{'PI:f'}) {
 	# Get alginment data

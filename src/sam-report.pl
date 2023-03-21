@@ -60,7 +60,7 @@ while(<>) {
     my %hit;
     biointsam::parse_sam($_, \%ref, \%hit); 
     next unless %hit;
-    if ($hit{'RNAME'} eq "*") {
+    if ($hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*") {
 	$query{ $hit{'QNAME'} } = length($hit{'SEQ'});
 	next;
     }

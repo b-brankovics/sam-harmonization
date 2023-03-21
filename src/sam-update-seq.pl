@@ -152,7 +152,7 @@ while(<$samfh>) {
 	$qual = $1;
     }
 
-    unless($hit{'RNAME'} eq "*") {
+    unless($hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*") {
 
 	&updatehit(\%hit, $rfile) if $update;
 	

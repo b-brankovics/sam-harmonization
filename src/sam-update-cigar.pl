@@ -60,7 +60,7 @@ while(<$samfh>) {
 	next;
     }
     # Nothing to do if there is no hit for the query sequence, so skip it
-    unless($hit{'RNAME'} eq "*") {
+    unless($hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*") {
 
 	# Update CIGAR if needed
 	my $len = 0;

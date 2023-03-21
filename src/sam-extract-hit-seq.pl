@@ -45,7 +45,7 @@ while(<>) {
     my %hit;
     &parse_sam($_, \%ref, \%hit); 
     next unless %hit;
-    next if $hit{'RNAME'} eq "*";
+    next if $hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*";
     # Get alginment data
     my $aln = &parse_cigar($hit{'CIGAR'}, $hit{'FLAG'}, $hit{'SEQ'});
     my $len = $aln->{'length'};

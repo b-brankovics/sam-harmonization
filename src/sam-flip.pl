@@ -19,7 +19,7 @@ while(<>) {
 	print {$temp} "$_\n" unless /^\@SQ/;
 	next;
     }
-    next if $hit{'RNAME'} eq "*";
+    next if $hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*";
     # Get alginment data
     my $aln = biointsam::parse_cigar($hit{'CIGAR'}, $hit{'FLAG'}, $hit{'SEQ'});
     $query{ $hit{'QNAME'} } = $aln->{'length'} - $aln->{'deletion'} + $aln->{'unmapped'};
