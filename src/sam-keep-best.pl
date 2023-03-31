@@ -422,7 +422,7 @@ sub update_pair {
     my %hit = %$hitref;
 
     if ($term eq 'AS:i') {
-	unless ($hit{'AS:i'}) {
+	unless (defined $hit{'AS:i'}) {
 	    # Make SAM output invalid to make the mistake obvious and die with error
 	    print "ERROR: Aborted, due to missing alignment score ('AS:i:<int>' column). Check STDERR for more info.\n";
 	    die "ERROR: Hit does not have an alignment score ('AS:i:<int>' column).\n" .
@@ -431,7 +431,7 @@ sub update_pair {
 	}
 	$pair->{$term} += $hit{$term};
     } elsif ($term eq 'BS:f') {
-	unless ($hit{'BS:f'}) {
+	unless (defined $hit{'BS:f'}) {
 	    # Make SAM output invalid to make the mistake obvious and die with error
 	    print "ERROR: Aborted, due to missing bitscore ('BS:f:<num>' column). Check STDERR for more info.\n";
 	    die "ERROR: Hit does not have a bitscore ('BS:f:<num>' column).\n" .
