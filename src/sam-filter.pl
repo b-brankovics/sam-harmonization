@@ -103,7 +103,7 @@ while(<>) {
 	    if ($hit{'CIGAR'} =~ /(\d+)H$/) {
 		$seq = reverse substr(reverse($seq), $1);
 	    }
-	    $hit{'SEQ'} = $mem;
+	    $hit{'SEQ'} = $seq;
 	}
     } else {
 	unless ($hit{'CIGAR'} =~ /H/) {
