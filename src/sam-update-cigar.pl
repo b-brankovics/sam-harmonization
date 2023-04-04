@@ -10,6 +10,10 @@ use biointbasics;
 use Bio::SeqIO;
 use Bio::Seq;
 
+my $programname = "sam-update-cigar.pl";
+my $version = "1.1";
+my $cmd = join(" ", $programname, @ARGV);
+
 #===DESCRIPTION=================================================================
 
 my $description = 
@@ -42,14 +46,9 @@ biointbasics::print_help(\@ARGV, $info);
 my %ref;
 my %query;
 my $hits;
-my $samfh;
-if ($sam eq '-') {
-    $samfh = *STDIN;
-} else {
-    open($samfh, '<', $sam) || die $!;
-}
-
-while(<$samfh>) {
+my $header = "true";
+my $previousprogram = "";
+while(<>) {
     #print "$_";
     my %hit;
     biointsam::parse_sam($_, \%ref, \%hit);
@@ -57,8 +56,18 @@ while(<$samfh>) {
     unless (%hit) {
 	# Print header to maintain a valid SAM output
 	print "$_\n";
+	if (/^\@PG\tID:(\S+)/) {
+	    $previousprogram = $1;
+	}
 	next;
     }
+    if ($header) { # First line after the header section
+	my $text = "\@PG\tID:$programname\tPN:$programname";
+	$text .= "\tPP:$previousprogram" if $previousprogram;
+	print $text . "\tVN:$version\tCL:$cmd\n";
+	$header = undef;
+    }
+
     # Nothing to do if there is no hit for the query sequence, so skip it
     unless($hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*") {
 
@@ -95,4 +104,4 @@ while(<$samfh>) {
     print biointsam::sam_string(\%hit), "\n";
 }
 
-print "No hits to plot in the SAM file\n" unless $hits;
+

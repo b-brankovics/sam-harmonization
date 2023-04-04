@@ -10,6 +10,10 @@ use biointbasics;
 use Bio::SeqIO;
 use Bio::Seq;
 
+my $programname = "sam-update-iupac.pl";
+my $version = "1.1";
+my $cmd = join(" ", $programname, @ARGV);
+
 #===DESCRIPTION=================================================================
 
 my $description = 
@@ -35,11 +39,11 @@ my $info = {
 # Print help if needed
 biointbasics::print_help(\@ARGV, $info);
 
-my $header;
+my $updateheader;
 my @keep;
 for (@ARGV) {
     if (/^--?head(er)?$/) {
-	$header++;
+	$updateheader++;
     } else {
 	push @keep, $_;
     }
@@ -64,7 +68,7 @@ if ($ref) {
 #print '%', ("123456789^" x 10), "\n";
 my %ref;
 # Update header if asked
-if ($header) {
+if ($updateheader) {
     my $rio = Bio::SeqIO->new(-file=>$ref,-format=>'fasta');
     while ( my $rseq = $rio->next_seq() ) {
 	my $id = $rseq->id();
@@ -86,16 +90,27 @@ if ($sam eq '-') {
 my $qname = "";
 my $mem = "";
 my $memflag = 0;
+my $header = "true";
+my $previousprogram = "";
 while(<$samfh>) {
     #print "$_";
     my %hit;
-    next if /^\@SQ/ && $header;
+    next if /^\@SQ/ && $updateheader;
     biointsam::parse_sam($_, \%ref, \%hit);
     # Header lines contain no hits
     unless (%hit) {
 	# Print header to maintain a valid SAM output
 	print "$_\n";
+	if (/^\@PG\tID:(\S+)/) {
+	    $previousprogram = $1;
+	}
 	next;
+    }
+    if ($header) { # First line after the header section
+	my $text = "\@PG\tID:$programname\tPN:$programname";
+	$text .= "\tPP:$previousprogram" if $previousprogram;
+	print $text . "\tVN:$version\tCL:$cmd\n";
+	$header = undef;
     }
     # Nothing to do if there is no hit for the query sequence, so skip it
     next if $hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*";
@@ -115,7 +130,7 @@ while(<$samfh>) {
 	    if ($hit{'CIGAR'} =~ /(\d+)H$/) {
 		$seq = reverse substr(reverse($seq), $1);
 	    }
-	    $hit{'SEQ'} = $mem;
+	    $hit{'SEQ'} = $seq;
 	}
     } else {
 	unless ($hit{'CIGAR'} =~ /H/) {
@@ -133,7 +148,6 @@ while(<$samfh>) {
     $hits++;
 }
 
-print "No hits to plot in the SAM file\n" unless $hits;
 
 sub updatehit{
     # Update the alignment info for ambiguity sites

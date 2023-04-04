@@ -9,9 +9,12 @@ use biointsam;
 use File::Basename;
 use Data::Dumper;
 
+my $programname = "sam-keep-best.pl";
+my $version = "1.1";
+my $cmd = join(" ", $programname, @ARGV);
+
 #===DESCRIPTION=================================================================
 
-my $version = '1.0';
 my $description = 
     "Description:\n\t" .
     "A tool to filter SAM files and keep the best match/mapping for each query entry and\n" .
@@ -64,7 +67,6 @@ my $term = 'AS:i';
 my $maxoverlap = 0;
 my $percentoverlap = 0;
 
-my $cmd = "$0 @ARGV";
 my @keep;
 for (@ARGV) {
     if (/^--?bs$/ || /^--?bitscore$/) {
@@ -142,24 +144,26 @@ my $q2r = {};
 # Store information for local best hits
 my $location = {};
 
-my $pp;
-my $pg;
+my $header = "true";
+my $previousprogram = "";
 while(<>) {
     my %hit;
     biointsam::parse_sam($_, \%ref, \%hit); 
     unless (%hit) {
 	if (/^\@PG\tID:(\S+)/) {
-	    $pp = $1;
-	}
-	if ($pp && ! $pg && $_ !~ /^\@PG/) {
-	    my $tool = $0;
-	    ($tool) = fileparse($tool);
-	    print join("\t", '@PG', "ID:$tool", "PN:$tool", "PP:$pp", "VN:$version", "CL:$cmd"), "\n";
-	    $pg++;
+	    $previousprogram = $1;
 	}
 	print "$_\n";
 	next;
     }
+
+    if ($header) { # First line after the header section
+	my $text = "\@PG\tID:$programname\tPN:$programname";
+	$text .= "\tPP:$previousprogram" if $previousprogram;
+	print $text . "\tVN:$version\tCL:$cmd\n";
+	$header = undef;
+    }
+
     next if $hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*";
     # Get alginment data
     my $aln = biointsam::parse_cigar($hit{'CIGAR'}, $hit{'FLAG'}, $hit{'SEQ'});

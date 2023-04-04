@@ -10,7 +10,9 @@ use biointbasics;
 use Bio::SeqIO;
 use Bio::Seq;
 
-use Data::Dump qw(dump);
+my $programname = "sam-update-seq.pl";
+my $version = "1.1";
+my $cmd = join(" ", $programname, @ARGV);
 
 #===DESCRIPTION=================================================================
 
@@ -118,6 +120,8 @@ my $qname = "";
 my $mem = "";
 my $memflag = 0;
 my $qseq;
+my $header = "true";
+my $previousprogram = "";
 while(<$samfh>) {
     #print "$_";
     my %hit;
@@ -127,7 +131,16 @@ while(<$samfh>) {
     unless (%hit) {
 	# Print header to maintain a valid SAM output
 	print "$_\n";
+	if (/^\@PG\tID:(\S+)/) {
+	    $previousprogram = $1;
+	}
 	next;
+    }
+    if ($header) { # First line after the header section
+	my $text = "\@PG\tID:$programname\tPN:$programname";
+	$text .= "\tPP:$previousprogram" if $previousprogram;
+	print $text . "\tVN:$version\tCL:$cmd\n";
+	$header = undef;
     }
     unless ($qname eq $hit{'QNAME'}) {
 	# Look up seq in FASTQ

@@ -5,10 +5,12 @@ that programs can use the output of other programs. The main concept in the
 setup and design of this toolbox is to convert the output of all the programs
 that we want to use for primary analysis (read-mapping or homology tools) to
 a standard format.
+
 We have chosen for the SAM (or BAM which is the compressed form) format,
 because it is the standard output for read-mapping tools, it is a sufficiently
 flexible and robust format, and many programs accept it as input (including
 visualization tools such as [pavian](https://github.com/fbreitwieser/pavian)).
+
 Since read-mapping tools already produce correct SAM output, we only needed to
 make sure that outputs of the 3 most commonly used (nucleotide to nucleotide)
 homology tools (BLAST, nucmer and exonerate) are converted in to correct SAM
@@ -20,7 +22,8 @@ The "middle part" of workflows consists of filtering steps to process your raw
 output from the primary analysis (mapping, alignment or other homology tools).
 Since [samtools](http://samtools.github.io/) already provides many useful tools
 for this. The goal for this project was to add tools for common filtering
-steps that are not covered by samtools (but maybe included in CLC genomic workbench).
+steps that are not covered by samtools (but maybe included in CLC genomic
+workbench and similar tools).
 
 These different filtering options are covered by two scripts (sam-filter.pl & sam-keep-best.pl).
 The first (sam-filter.pl) filter is based on thresholds:
@@ -175,10 +178,10 @@ flowchart LR
 ```
 
 
-Metadata aspects (to do):
+Metadata aspects for future considerations:
 - Comment lines could be used to store input file information
 - Reference sequence can hold assembly ID information
-- We could add Line to the header for storing provenance info of the runs
+
 
 ## SAM format
 
@@ -291,7 +294,7 @@ It specifically relies on finding `$subject-db\.ndb` and `$subject-db\.nin`. The
 Alignment score is stored in the optional field in SAM with `AS:i:` tag as an integer.
 Different programs calculate alignment scores in different ways.
 To combine the results from different methods, scores have to be calculated in the same way.
-Nucmer does not calculate alignment scores, so during conversion from delta it would be useful to calculate a score.
+Nucmer does not calculate alignment scores, so during conversion from delta a score is calculated using the default use by these tools (see below).
 
 ### Defalut scoring in exonerate
 
