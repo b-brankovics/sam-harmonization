@@ -10,7 +10,7 @@ use File::Basename;
 use Data::Dumper;
 
 my $programname = "sam-keep-best.pl";
-my $version = "1.1";
+my $version = "1.2";
 my $cmd = join(" ", $programname, @ARGV);
 
 #===DESCRIPTION=================================================================
@@ -165,6 +165,17 @@ while(<>) {
     }
 
     next if $hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*";
+
+    # Add read pair flags ('/1' and '/2' for forward and reverse reads of a pair)
+    #  otherwise false conclusions will be used
+    #  these flags will be removed before printing to OUTPUT
+    if ($hit{"FLAG"} & 64) {
+	$hit{'QNAME'} .= "/1";
+    } elsif ($hit{"FLAG"} & 128) {
+	$hit{'QNAME'} .= "/2";
+    }
+
+    
     # Get alginment data
     my $aln = biointsam::parse_cigar($hit{'CIGAR'}, $hit{'FLAG'}, $hit{'SEQ'});
     # Store the length of queey seq
@@ -338,9 +349,11 @@ if ($mode eq "local") {
 		# Print equals and empty @equals
 		while (@equals) {
 		    my $x = shift @equals;
-		    print biointsam::sam_string($x->{'hit'}), "\n";
+		    # print biointsam::sam_string($x->{'hit'}), "\n";
+		    &print_sam($x->{'hit'});
 		}
-		print biointsam::sam_string($a->{'hit'}), "\n";
+		# print biointsam::sam_string($a->{'hit'}), "\n";
+		&print_sam($a->{'hit'});
 		$a = $b;
 		# Update tolerance if percent option is selected
 		$e = ($a->{'to'} - $a->{'from'} + 1) * $percentoverlap if $percentoverlap;
@@ -348,9 +361,11 @@ if ($mode eq "local") {
 	}
 	while (@equals) {
 	    my $x = shift @equals;
-	    print biointsam::sam_string($x->{'hit'}), "\n";
+	    # print biointsam::sam_string($x->{'hit'}), "\n";
+	    &print_sam($x->{'hit'});
 	}
-	print biointsam::sam_string($a->{'hit'}), "\n" if $a;
+	# print biointsam::sam_string($a->{'hit'}), "\n" if $a;
+	&print_sam($a->{'hit'});
     }    
 } elsif ($mode eq "summative") {
 
@@ -411,13 +426,26 @@ if ($mode eq "local") {
     }
     for my $pair (@best) {
 	for my $hit (@{ $pair->{"hits"} }) {
-	    print biointsam::sam_string($hit), "\n";
+	    # print biointsam::sam_string($hit), "\n";
+	    &print_sam($hit);
 	}
     }
 }
 
 
 #===SUBROUTINES=================================================================
+
+sub print_sam {
+    my ($hash) = @_;
+
+    # Remove read pair flags ('/1' and '/2' for forward and reverse reads of a pair)
+    if ($hash->{'FLAG'} & 64) {
+	$hash->{'QNAME'} =~ s/\/1$//;
+    } elsif ($hash->{'FLAG'} & 128) { 
+	$hash->{'QNAME'} =~ s/\/2$//;
+    }
+    print biointsam::sam_string($hash), "\n";
+}
 
 sub update_pair {
     # Update pair info
