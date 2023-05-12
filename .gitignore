@@ -1,8 +1,8 @@
 !Build/
 .last_cover_stats
-/META.yml
-/META.json
-/MYMETA.*
+src/META.yml
+src/META.json
+src/MYMETA.*
 *.o
 *.pm.tdy
 *.bs
@@ -25,14 +25,14 @@ Build.bat
 inc/
 
 # ExtUtils::MakeMaker
-/blib/
-/_eumm/
-/*.gz
-/Makefile
-/Makefile.old
-/MANIFEST.bak
-/pm_to_blib
-/*.zip
+src/blib/
+src/_eumm/
+src/*.gz
+src/Makefile
+src/Makefile.old
+src/MANIFEST.bak
+src/pm_to_blib
+src/*.zip
 
 # emacs backups
 *~
