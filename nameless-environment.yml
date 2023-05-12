@@ -1,0 +1,29 @@
+channels:
+  - conda-forge
+  - default
+  - pytorch
+  - flomock
+  - bioconda
+  - defaults
+dependencies:
+  - perl>=5.32.1
+  - perl-bioperl-core
+  - taxonkit
+# analysis
+  - exonerate
+  - mummer
+  - minimap2
+  - blast
+  - megahit
+  - spades
+  - flye
+# reporting
+  - r-base=4.1
+  - r-rmarkdown
+  - r-ggplot2==3.3.5
+  - r-viridis
+  - r-gggenes # not needed, but present in the blastplot.R script
+# testing
+  - pytest
+  - samtools # used in testing scripts, but could be used for downstream analysis
+  
