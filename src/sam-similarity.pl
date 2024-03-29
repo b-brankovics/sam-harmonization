@@ -9,15 +9,12 @@ use biointbasics;
 
 
 #===DESCRIPTION=================================================================
-# A tool to remove duplicate sequence from FASTA format files and
-#  print the groups to STDERR
-
 my $description = 
     "Description:\n\t" .
     "A tool to calculate ANI and coverage statistics for SAM files.\n" .
     "\tThe tool either opens the file specified as input or reads from STDIN when no file is given.\n";
 my $usage = 
-    "Usage:\n\t$0 [OPTIONS]  [SAM file]\n";
+    "Usage:\n\t$0 [OPTIONS] [SAM file] [Reference FASTA] [Query FASTA]\n";
 my $options = 
     "Options:\n" .
     "\t-h | --help\n\t\tPrint the help message; ignore other arguments.\n" .
@@ -30,164 +27,202 @@ my $info = {
 
 #===MAIN========================================================================
 
-biointbasics::print_help(\@ARGV, $info);
+# Get input files
+# - none => STDIN
+# - one => only SAM file
+# - three
+my ($sam, $rfasta, $qfasta) = @ARGV;
+
+# Check input files
+my $error = "";
+if (@ARGV) {
+    # At least SAM file is specified
+    unless($sam ne '-' && -e $sam && ! -z $sam){
+            $error .= "ERROR: SAM file ('$sam') is empty or missing\n";
+    }  
+    if (@ARGV > 3) {
+        $error .= "ERROR: Too many inputs specified, please use maximum 3.\n";
+    } elsif (@ARGV == 2) {
+        $error .= "ERROR: If you wish to specify FASTA files, please specify both reference and query files.\n";
+    } elsif (@ARGV == 3) {
+        # Check the FASTA files
+        if (! -e $rfasta || -z $rfasta) {
+            $error .= "ERROR: Reference FASTA file ('$rfasta') is empty or missing\n";
+        }
+        if (! -e $qfasta || -z $qfasta) {
+            $error .= "ERROR: Query FASTA file ('$qfasta') is empty or missing\n";
+        }
+    }
+}
+# Print help or errors if needed
+biointbasics::print_help(\@ARGV, $info, $error);
+
+my $files = 1;
 
 my %ref;
 my %query;
-
-my $files = 1;
 
 # ANI calculation
 my $numer; # nummerator
 my $denom; # denominator
 my $length;
 my $mis;
-# Store homology stretches per input
+# Store homology stretches per input to use for coverage calculation
 my %r;
-my $i;
 my %q;
-my $j;
 # Keep all the individual identity scores
 my @scores;
 
 
-while(<>) {
+my $samfh;
+# Read from STDIN if no file is specified or '-' is used
+if (! $sam || $sam eq '-') {
+    $samfh = *STDIN;
+} else {
+    open($samfh, '<', $sam) || die $!;
+}
+while(<$samfh>) {
+    # Parse SAM line by line and populate %ref from the header and save hit info
     my %hit;
     biointsam::parse_sam($_, \%ref, \%hit); 
+    # Next unless there is hit or mapping
     next unless %hit;
     next if $hit{"FLAG"} & 4 || $hit{'RNAME'} eq "*";
-    # Get alginment data
+    # Get alginment data for hit
     my $aln = biointsam::parse_cigar($hit{'CIGAR'}, $hit{'FLAG'}, $hit{'SEQ'});
-    # Store the length of queey seq
+    # Store the length of query seq
     $query{ $hit{'QNAME'} } = $aln->{'length'} - $aln->{'deletion'} + $aln->{'unmapped'};
-
-    $i = $hit{'RNAME'};
-    $j = $hit{'QNAME'};
+    # Alignment length and mismatches
     my $length = $aln->{'length'};
     my $mis = $hit{'NM:i'};
+
+    # Update values for ANI calculation
     $numer += $length - $mis;
     $denom += $length;
+    # Save individual score value
     push @scores, ($length - $mis) / $length;
+
     # store info for coverage
     # ref
-    my $s = $hit{'POS'};
-    my $e = $hit{'POS'} + $length - $aln->{'insertion'} - 1;
-    if ($r{$i} && $r{$i}->{$s}) {
-	if ($r{$i}->{$s} < $e) {
-	    $r{$i}->{$s} = $e;
-	}
-    } else {
-	$r{$i}->{$s} = $e;
-    }
-    # q
-    my $s2 = $aln->{'start'};
-    my $e2 = $aln->{'start'} - 1 + $aln->{'length'} - $aln->{'deletion'};
-    if ($q{$j} && $q{$j}->{$s2}) {
-	if ($q{$j}->{$s2} < $e2) {
-	    $q{$j}->{$s2} = $e2;
-	}
-    } else {
-	$q{$j}->{$s2} = $e2;
-    }
+    # Get start and end positions
+    my $start1 = $hit{'POS'};
+    my $end1 = $hit{'POS'} + $length - $aln->{'insertion'} - 1;
+    &add_hit(\%r, $hit{'RNAME'}, $start1, $end1);
+    # query
+    # Get start and end positions
+    my $start2 = $aln->{'start'};
+    my $end2 = $aln->{'start'} - 1 + $aln->{'length'} - $aln->{'deletion'};
+    &add_hit(\%q, $hit{'QNAME'}, $start2, $end2);
 }
 
+# Merge overlapping or continuous hits before calculating (breadth) coverage
+&merge_overlapping(\%r);
+&merge_overlapping(\%q);
+my $covr = &calc_coverage(\%r);
+my $covq = &calc_coverage(\%q);
 
-
-# Merge overlaps or continuous stretches for reference
-for my $id (sort keys %r) {
-    my $from;
-    my $to;
-    for my $s (sort{$a <=> $b} keys %{ $r{$id} }) {
-	if ($to && $to + 1 >= $s) {
-	    if ($r{$id}->{$s} > $to) {
-		# extend the old one
-		$r{$id}->{$from} = $r{$id}->{$s};
-	    }
-	    # remove the current one
-	    delete $r{$id}->{$s};
-	    $s = $from;
-	}
-	$from = $s;
-	$to = $r{$id}->{$s};
-    }
-}
-
-# Sum total coverage of reference
-my $covr;
-for my $id (sort keys %r) {
-    for my $s (sort{$a <=> $b} keys %{ $r{$id} }) {
-	$covr += $r{$id}->{$s} + 1 - $s;
-    }
-}
-
-# Merge overlaps or continuous stretches for query
-for my $id (sort keys %q) {
-    my $from;
-    my $to;
-    for my $s (sort{$a <=> $b} keys %{ $q{$id} }) {
-	if ($to && $to + 1 >= $s) {
-	    if ($q{$id}->{$s} > $to) {
-		# extend the old one
-		$q{$id}->{$from} = $q{$id}->{$s};
-	    }
-	    delete $q{$id}->{$s};
-	    $s = $from;
-	}
-	$from = $s;
-	$to = $q{$id}->{$s};
-    }
-}
-
-# Sum total coverage of query
-my $covq;
-for my $id (sort keys %q) {
-    for my $s (sort{$a <=> $b} keys %{ $q{$id} }) {
-	$covq += $q{$id}->{$s} + 1 - $s;
-    }
-}
-
-# Report ANI and similarity
+# Report ANI if there were any hits => denominator > 0
 unless ($denom) {
     print "No alignment in the SAM file\n";
     exit;
 }
-
 print "ANI: " . (sprintf '%.2f', 100 * $numer / $denom) . "% ($numer/$denom)\n";
- 
 
-
+# Print score range and mean for indivudal alignments/hits
 my @sort = sort {$a<=>$b} @scores;
 my $sum;
 for (@sort) {
     $sum += $_;
 }
 print "(Range of similarity scores [$sort[0], $sort[-1]]; arithmetic mean " . ($sum / scalar @sort) . ")\n";
-# print "alingment length: $denom\n";
-# print "identical positions: $numer\n";
 
-# Get full lengths and report coverage info
+# Get full lengths for coverage info
 my ($len_r, $len_q);
-for (values %ref) {
-    $len_r += $_;
-}
-for (values %query) {
-    $len_q += $_;
-}
-
-if ($files) {
-    print "R covered: $covr";
-    print " (", (sprintf '%.2f', (100 * $covr / $len_r)), "%)";
-    print "\n";
-    print "Q covered: $covq";
-    print " (", (sprintf '%.2f', (100 * $covq / $len_q)), "%)";
-    print "\n";
+# Use FASTA files if possible
+if ($rfasta && $qfasta) {
+    # store seq info hash: ID -> sequence
+    my $ref_seq = {};
+    my $query_seq = {};
+    biointbasics::read_fasta($ref_seq, [], $rfasta);
+    biointbasics::read_fasta($query_seq, [], $qfasta);
+    # Add up sequence lengths
+    for (values %$ref_seq) {
+        $len_r += length($_);
+    }
+    for (values %$query_seq) {
+        $len_q += length($_);
+    }
 } else {
-    $len_r = ">=$len_r";
-    $len_q = ">=$len_q";
+    # Get length info from SAM data
+    for (values %ref) {
+        $len_r += $_;
+    }
+    for (values %query) {
+        $len_q += $_;
+    }
+    # Warn user
+    print STDERR "WARNING: SAM file is used to calculate reference and query length. This may be inacurate if it was filtered.\n";
 }
 
+# Print coverage info
+print "R covered: $covr";
+print " (", (sprintf '%.2f', (100 * $covr / $len_r)), "%)";
+print "\n";
+print "Q covered: $covq";
+print " (", (sprintf '%.2f', (100 * $covq / $len_q)), "%)";
+print "\n";
 
+# Print summary in 2 line TSV
 print "# ", join("\t", "Similarity", "Identical", "Aligned", "A-covered", "B-covered", "A-length", "B-length"), "\n";
 print join("\t", $numer / $denom, $numer, $denom, $covr, $covq, $len_r, $len_q), "\n";
 
+#===SUBROUTINES=================================================================
 
+sub add_hit {
+    # Add hit info to hash based on seq_ID, start and end position
+    my ($hashref, $id, $start, $end) = @_;
+    if ($hashref->{$id} && $hashref->{$id}->{$start}) {
+        # if already exists a hit with the same start, extend if longer
+	    if ($hashref->{$id}->{$start} < $end) {
+	        $hashref->{$id}->{$start} = $end;
+	    }
+    } else {
+        # Create new hit
+	    $hashref->{$id}->{$start} = $end;
+    }
+}
+
+sub merge_overlapping {
+    # Merge overlaps or continuous stretches for ref or query hash
+    # Modifies the hash content
+    my ($hasref) = @_;
+    for my $id (sort keys %$hasref) {
+        my $from;
+        my $to;
+        for my $s (sort{$a <=> $b} keys %{ $hasref->{$id} }) {
+    	    if ($to && $to + 1 >= $s) {
+	            if ($hasref->{$id}->{$s} > $to) {
+		        # extend the old one
+		        $hasref->{$id}->{$from} = $hasref->{$id}->{$s};
+	            }
+	            # remove the current one
+	            delete $hasref->{$id}->{$s};
+	            $s = $from;
+	        }
+	        $from = $s;
+	        $to = $hasref->{$id}->{$s};
+        }
+    }
+}
+
+sub calc_coverage {
+    # Sum total coverage for ref or query hash and return coverage value
+    my ($hasref) = @_;
+    my $cov;
+    for my $id (sort keys %$hasref) {
+        for my $s (sort{$a <=> $b} keys %{ $hasref->{$id} }) {
+	    $cov += $hasref->{$id}->{$s} + 1 - $s;
+        }
+    }
+    return $cov;
+}
