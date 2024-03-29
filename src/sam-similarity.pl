@@ -31,7 +31,7 @@ my $info = {
 # - none => STDIN
 # - one => only SAM file
 # - three
-my ($sam, $rfasta, $qfasta) = @ARGV;
+my ($sam, $ref_fasta, $query_fasta) = @ARGV;
 
 # Check input files
 my $error = "";
@@ -46,19 +46,18 @@ if (@ARGV) {
         $error .= "ERROR: If you wish to specify FASTA files, please specify both reference and query files.\n";
     } elsif (@ARGV == 3) {
         # Check the FASTA files
-        if (! -e $rfasta || -z $rfasta) {
-            $error .= "ERROR: Reference FASTA file ('$rfasta') is empty or missing\n";
+        if (! -e $ref_fasta || -z $ref_fasta) {
+            $error .= "ERROR: Reference FASTA file ('$ref_fasta') is empty or missing\n";
         }
-        if (! -e $qfasta || -z $qfasta) {
-            $error .= "ERROR: Query FASTA file ('$qfasta') is empty or missing\n";
+        if (! -e $query_fasta || -z $query_fasta) {
+            $error .= "ERROR: Query FASTA file ('$query_fasta') is empty or missing\n";
         }
     }
 }
 # Print help or errors if needed
 biointbasics::print_help(\@ARGV, $info, $error);
 
-my $files = 1;
-
+# Store length info based on SAM file for IDs
 my %ref;
 my %query;
 
@@ -72,7 +71,6 @@ my %r;
 my %q;
 # Keep all the individual identity scores
 my @scores;
-
 
 my $samfh;
 # Read from STDIN if no file is specified or '-' is used
@@ -118,8 +116,8 @@ while(<$samfh>) {
 # Merge overlapping or continuous hits before calculating (breadth) coverage
 &merge_overlapping(\%r);
 &merge_overlapping(\%q);
-my $covr = &calc_coverage(\%r);
-my $covq = &calc_coverage(\%q);
+my $ref_cov = &calc_coverage(\%r);
+my $query_cov = &calc_coverage(\%q);
 
 # Report ANI if there were any hits => denominator > 0
 unless ($denom) {
@@ -137,44 +135,44 @@ for (@sort) {
 print "(Range of similarity scores [$sort[0], $sort[-1]]; arithmetic mean " . ($sum / scalar @sort) . ")\n";
 
 # Get full lengths for coverage info
-my ($len_r, $len_q);
+my ($ref_len, $query_len);
 # Use FASTA files if possible
-if ($rfasta && $qfasta) {
+if ($ref_fasta && $query_fasta) {
     # store seq info hash: ID -> sequence
     my $ref_seq = {};
     my $query_seq = {};
-    biointbasics::read_fasta($ref_seq, [], $rfasta);
-    biointbasics::read_fasta($query_seq, [], $qfasta);
+    biointbasics::read_fasta($ref_seq, [], $ref_fasta);
+    biointbasics::read_fasta($query_seq, [], $query_fasta);
     # Add up sequence lengths
     for (values %$ref_seq) {
-        $len_r += length($_);
+        $ref_len += length($_);
     }
     for (values %$query_seq) {
-        $len_q += length($_);
+        $query_len += length($_);
     }
 } else {
     # Get length info from SAM data
     for (values %ref) {
-        $len_r += $_;
+        $ref_len += $_;
     }
     for (values %query) {
-        $len_q += $_;
+        $query_len += $_;
     }
     # Warn user
     print STDERR "WARNING: SAM file is used to calculate reference and query length. This may be inacurate if it was filtered.\n";
 }
 
 # Print coverage info
-print "R covered: $covr";
-print " (", (sprintf '%.2f', (100 * $covr / $len_r)), "%)";
+print "R covered: $ref_cov";
+print " (", (sprintf '%.2f', (100 * $ref_cov / $ref_len)), "%)";
 print "\n";
-print "Q covered: $covq";
-print " (", (sprintf '%.2f', (100 * $covq / $len_q)), "%)";
+print "Q covered: $query_cov";
+print " (", (sprintf '%.2f', (100 * $query_cov / $query_len)), "%)";
 print "\n";
 
 # Print summary in 2 line TSV
 print "# ", join("\t", "Similarity", "Identical", "Aligned", "A-covered", "B-covered", "A-length", "B-length"), "\n";
-print join("\t", $numer / $denom, $numer, $denom, $covr, $covq, $len_r, $len_q), "\n";
+print join("\t", $numer / $denom, $numer, $denom, $ref_cov, $query_cov, $ref_len, $query_len), "\n";
 
 #===SUBROUTINES=================================================================
 
