@@ -22,23 +22,23 @@ my $description =
     "\talignment scores for all matches belonging to the same reference-query pair.\n" .
     "\tThe tool either opens the file specified as input or reads from STDIN when no file is given.\n";
 my $usage = 
-    "Usage:\n\t$0 [-h | --help] [-bs | --bitscore]  [SAM file]\n";
+    "Usage:\n\t$0 [Options]  [SAM file]\n";
 my $options = 
     "Options:\n" .
     "\t-h | --help\n\t\tPrint the help message; ignore other arguments.\n" .
     "\t-g | --global\n\t\tThe best match is identified by summing all the alignment scores for all matches belonging to the same reference-query pair (This is the default mode).\n" .
-    "\t-l | --local\n\t\tKeep the best local hits for each region of query sequences.\n\t\tEliminates hits that overlap with another that has a higher alignment score.\n" .
-    "\t-u | --unique\n\t\tKeep only one hit per reference-query pair (or the the equally best ones).\n\t\tThis happens prior the other ranking based filtering.\n" .
+    "\t-l | --local\n\t\tKeep the best local hits for each region of query sequences.\n\t\tEliminates hits that overlap with another that has a higher score.\n" .
+    "\t-mo=<int> | --max-overlap=<int>\n\t\tAllow <int> overlap between hits for local mode. (Default is 0 bp. Incompatible with '-po=<float>'.)\n" .
+    "\t-po=<float> | --max-percent-overlap=<float>\n\t\tAllow <float> (10% should be set as '-po=0.1') overlap between hits for local mode. (Incompatible with '-mo=<int>'. Not set by default.)\n" . 
+                                                   "\t\tThe overlap has to be shorter than the selected percentage of the shorter hit (understood as matched region on query).\n" .
     "\t-bs | --bitscore\n\t\tInstead of using the alignment score, use the bitscore.\n\t\t(Only possible if the SAM was generated based on a BLAST run)\n" .
     "\t-pi | --percent-identity\n\t\tInstead of using the alignment score, use the percent identity (identical bases/alignment length).\n" .
     "\t-rid | --reference-identity\n\t\tInstead of using the alignment score, use reference identity (identical positions/reference length).\n\t\t(Only implemented for local mode.)\n" .
     "\t-qid | --query-identity\n\t\tInstead of using the alignment score, use query identity (identical positions/query length).\n\t\t(Only implemented for local mode.)\n" .
+    "\t-u | --unique\n\t\tKeep only one hit per reference-query pair (or the equally best ones).\n\t\tThis happens prior the other ranking based filtering.\n" .
     "\t-top=<int> | --top=<int>\n\t\tKeep the hits with the <int> highest score. Local mode can only be used with top=1 (the default setting).\n" .
     "\t-n=<int> | --n=<int>\n\t\tPrint only the first <int> hits with the selected high score range (defined by top).\n" .
                              "\t\tBy default n is not set, and all hits with the highest score are printed.\n" .
-    "\t-mo=<int> | --max-overlap=<int>\n\t\tAllow <int> overlap between hits for local mode. (Default is 0 bp. Incompatible with '-po=<float>'.)\n" .
-    "\t-po=<float> | --max-percent-overlap=<float>\n\t\tAllow <float> (10% should be set as '-po=0.1') overlap between hits for local mode. (Incompatible with '-mo=<int>'. Not set by default.)\n" . 
-                                                   "\t\tThe overlap has to be shorter than the selected percentage of the shorter hit (understood as matched region on query).\n" .
     "\n";
 
 #===MAIN========================================================================
