@@ -1,10 +1,7 @@
+name: sam-harmonization
 channels:
   - conda-forge
-  - default
-  - pytorch
-  - flomock
   - bioconda
-  - defaults
 dependencies:
   - perl>=5.32.1
   - perl-bioperl-core
@@ -26,4 +23,3 @@ dependencies:
 # testing
   - pytest
   - samtools # used in testing scripts, but could be used for downstream analysis
-  
