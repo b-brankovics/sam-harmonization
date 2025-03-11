@@ -10,7 +10,7 @@ WriteMakefile(
     AUTHOR            => 'b-brankovics <6728856+b-brankovics@users.noreply.github.com>',
 #    EXE_FILES         => [ "sam-score.pl" ], #[ map "bin/$_", qw(sam-ref-plot.pl) ],
     EXE_FILES         => [ glob("*.pl") ],
-    LICENSE           => 'perl',
+    LICENSE           => 'gpl',
     #Value must be from legacy list of licenses here
     #http://search.cpan.org/perldoc?Module%3A%3ABuild%3A%3AAPI
 );
