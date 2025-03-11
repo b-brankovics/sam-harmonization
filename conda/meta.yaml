@@ -1,0 +1,26 @@
+package:
+  name: sam-harmonization
+  version: "1.2"
+
+source:
+  path: ..
+
+requirements:
+  build:
+    - make
+  host:
+    - perl
+  run:
+    - perl
+    - bioconda::perl-bioperl-core
+    - bioconda::exonerate
+    - bioconda::blast
+
+about:
+  home: https://github.com/b-brankovics/sam-harmonization
+  license: GPL3
+  summary: 'The SAM harmonization package provides tools that can be used for building interoperable and modular analysis pipelines for NGS based detection, diagnostics or analytics.'
+  description: |
+    The SAM harmonization package provides tools that can be used for building
+    interoperable and modular analysis pipelines for NGS based detection,
+    diagnostics or analytics.
