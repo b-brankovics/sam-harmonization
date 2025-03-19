@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use FindBin;                     # locate this script
@@ -7,6 +7,8 @@ use lib "$FindBin::RealBin/../lib";  # use the parent directory
 
 # Biont SAM package
 package biointsam;
+
+our $VERSION = '1.0.2';
 
 sub score {
     # update alignment score

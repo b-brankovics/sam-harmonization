@@ -9,7 +9,8 @@ requirements:
   build:
     - make
   host:
-    - perl
+    - perl 5.32.1 1_h7f98852_perl5
+    - perl-extutils-makemaker
   run:
     - perl
     - bioconda::perl-bioperl-core

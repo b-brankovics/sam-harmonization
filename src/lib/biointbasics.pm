@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use FindBin;                     # locate this script
@@ -7,6 +7,8 @@ use lib "$FindBin::RealBin/../lib";  # use the parent directory
 
 # Biont basics: frequently used basic perl solutions
 package biointbasics;
+
+our $VERSION = '1.0.0';
 
 sub print_help {
     # Print out the usage to STDERR
